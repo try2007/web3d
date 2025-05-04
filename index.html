@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>3D Viewer</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Arial;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Перетащите GLB/GLTF-файл в это окно</div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        // 1. Инициализация сцены
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x333333);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Освещение (обязательно!)
+        const light1 = new THREE.AmbientLight(0xffffff, 0.5);
+        const light2 = new THREE.DirectionalLight(0xffffff, 1);
+        light2.position.set(1, 1, 1);
+        scene.add(light1, light2);
+
+        // 3. Загрузка модели перетаскиванием
+        document.body.addEventListener('dragover', (e) => e.preventDefault());
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (!file.name.match(/\.(gltf|glb)$/)) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                new THREE.GLTFLoader().parse(e.target.result, '', (gltf) => {
+                    scene.add(gltf.scene);
+                    document.getElementById('info').textContent = file.name;
+                }, (error) => {
+                    console.error(error);
+                    alert('Ошибка загрузки: ' + error.message);
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // 4. Анимация
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        camera.position.z = 5;
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
